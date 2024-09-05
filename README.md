@@ -87,4 +87,8 @@ This project is a simple Spring Boot REST API for managing customers, products, 
    ```bash
    mvn clean install
 4. Run the application
-5. The application will be available at http://localhost:8001
+5. The application will be available at ```http:://127.0.0.1:8001```
+
+
+## API DOCS
+- This project uses Swagger for API documentation. Once the application is running, navigate to: ```http://127.0.0.1:8001/swagger-ui/index.html```
