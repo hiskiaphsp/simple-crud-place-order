@@ -4,31 +4,28 @@ This project is a simple Spring Boot REST API for managing customers, products, 
 
 ## Features
 
-- **Customer Management**: Create and manage customer information.
 - **Product Management**: Manage a product catalog with pricing and product details.
 - **Cart Management**: Create carts, add products to a cart, and calculate total prices.
 - **Order Management**: Place an order by converting a cart into an order and moving relevant cart data to the order.
 
 ## Endpoints
 
-### Customer Endpoints
-- **POST /api/customers**: Create a new customer.
-- **GET /api/customers/{id}**: Get a customer by ID.
-
 ### Product Endpoints
 - **GET /api/products**: Get a paginated list of products.
 - **POST /api/products**: Add a new product.
+- **PUT /api/products/{id}**: Update a new product.
+- **DELETE /api/products/{id}**: Delete a product.
+  
 
 ### Cart Endpoints
 - **POST /api/carts**: Create a new cart.
 - **GET /api/carts/{id}**: Get a cart by ID.
 - **PUT /api/carts/{id}**: Update a cart.
-- **POST /api/carts/{id}/place**: Place an order from a cart.
 - **DELETE /api/carts/{id}**: Delete a cart.
 
 ### Order Endpoints
 - **GET /api/orders/{id}**: Get an order by ID.
-- **POST /api/orders**: Create a new order (automatically when placing an order from a cart).
+- **POST /api/orders/{id}/place**: Place order
 
 ## Database Models
 
