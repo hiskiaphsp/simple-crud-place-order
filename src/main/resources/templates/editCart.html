@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Edit Cart</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">My Shop</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Products</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/cart">Cart</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/order">Orders</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2>Edit Cart</h2>
+    <div class="mb-3">
+        <label for="customer-name-input" class="form-label"><strong>Customer Name:</strong></label>
+        <input type="text" id="customer-name-input" class="form-control" value="">
+    </div>
+    <div class="mb-3">
+        <label for="customer-address-input" class="form-label"><strong>Customer Address:</strong></label>
+        <input type="text" id="customer-address-input" class="form-control" value="">
+    </div>
+
+    <h3>Edit Cart Details</h3>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-dark">
+            <tr>
+                <th>Product Name</th>
+                <th>Type</th>
+                <th>Product Price</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="cart-details"></tbody>
+        </table>
+    </div>
+
+    <h3>Add New Product to Cart</h3>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead class="table-dark">
+            <tr>
+                <th>Product Name</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="product-list"></tbody>
+        </table>
+
+        <!-- Pagination controls for product list -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center" id="pagination-controls">
+                <li class="page-item"><a class="page-link" href="#" id="first-page" onclick="fetchProducts(0)">First</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="prev-page">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="next-page">Next</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="last-page" onclick="fetchProducts(totalPages - 1)">Last</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <button id="save-cart" class="btn btn-primary mt-4">Save Cart</button>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let cartData = {};
+    let productList = [];
+    let currentPage = 0;
+    let totalPages = 1;
+
+    $(document).ready(function() {
+        const cartId = window.location.pathname.split("/").pop();
+
+        $.ajax({
+            url: `/api/carts/${cartId}`,
+            method: 'GET',
+            success: function(response) {
+                cartData = response.data;
+                $('#customer-name-input').val(cartData.customer.name);
+                $('#customer-address-input').val(cartData.customer.address);
+                renderCartDetails();
+            },
+            error: function() {
+                alert("Failed to load cart details.");
+            }
+        });
+
+        fetchProducts(currentPage);
+
+        function renderCartDetails() {
+            let cartDetailsHtml = '';
+            cartData.cartDetails.forEach(function(detail, index) {
+                cartDetailsHtml += `
+                    <tr>
+                        <td>${detail.product.name}</td>
+                        <td>${detail.product.type}</td>
+                        <td>${detail.product.price.toFixed(2)}</td>
+                        <td><input type="number" id="quantity-${index}" value="${detail.quantity}" min="1" class="form-control"></td>
+                        <td>${detail.price.toFixed(2)}</td>
+                        <td><button type="button" class="btn btn-danger btn-sm" onclick="deleteCartDetail(${index}, ${detail.id})">Delete</button></td>
+                    </tr>
+                `;
+            });
+            $('#cart-details').html(cartDetailsHtml);
+        }
+
+        function fetchProducts(page) {
+            if (page < 0 || page >= totalPages) {
+                return;
+            }
+
+            const size = 5;
+            $.ajax({
+                url: `/api/products?page=${page}&size=${size}`,
+                method: 'GET',
+                success: function(response) {
+                    productList = response.data.items;
+                    totalPages = response.data.totalPages || 1;
+                    currentPage = response.data.page;
+
+                    $('#product-list').empty();
+                    productList.forEach(function(product) {
+                        $('#product-list').append(`
+                        <tr>
+                            <td>${product.name}</td>
+                            <td>${product.type}</td>
+                            <td>${product.description}</td>
+                            <td>${product.price.toFixed(2)}</td>
+                            <td><button type="button" class="btn btn-success btn-sm" onclick="addProductToCart(${product.id})">Add to Cart</button></td>
+                        </tr>`
+                        );
+                    });
+
+                    $('#prev-page').attr('onclick', `fetchProducts(${Math.max(0, currentPage - 1)})`);
+                    $('#next-page').attr('onclick', `fetchProducts(${Math.min(totalPages - 1, currentPage + 1)})`);
+
+                    if (currentPage === 0) {
+                        $('#first-page, #prev-page').parent().addClass('disabled');
+                    } else {
+                        $('#first-page, #prev-page').parent().removeClass('disabled');
+                    }
+
+                    if (currentPage === totalPages - 1) {
+                        $('#next-page, #last-page').parent().addClass('disabled');
+                    } else {
+                        $('#next-page, #last-page').parent().removeClass('disabled');
+                    }
+                },
+                error: function() {
+                    alert('Error fetching products.');
+                }
+            });
+        }
+
+        window.addProductToCart = function(productId) {
+            const selectedProduct = productList.find(p => p.id === productId);
+            if (selectedProduct) {
+                cartData.cartDetails.push({
+                    product: selectedProduct,
+                    quantity: 1,
+                    price: selectedProduct.price
+                });
+                renderCartDetails();
+                alert("Product added to cart.");
+            }
+        };
+
+        window.deleteCartDetail = function(index, cartDetailId) {
+            $.ajax({
+                url: `/api/cart-detail/${cartDetailId}`,
+                method: 'DELETE',
+                success: function() {
+                    cartData.cartDetails.splice(index, 1);
+                    renderCartDetails();
+                    alert("CartDetail deleted successfully.");
+                },
+                error: function() {
+                    alert("Failed to delete CartDetail.");
+                }
+            });
+        };
+
+        $('#save-cart').click(function() {
+
+            cartData.customer.name = $('#customer-name-input').val();
+            cartData.customer.address = $('#customer-address-input').val();
+
+
+            delete cartData.customer.createdAt;
+            delete cartData.customer.updatedAt;
+            delete cartData.customer.id;
+
+
+            cartData.cartDetails.forEach(function(detail, index) {
+                let updatedQuantity = parseInt($(`#quantity-${index}`).val());
+                if (!isNaN(updatedQuantity)) {
+                    detail.quantity = updatedQuantity;
+                    delete detail.createdAt;
+                    delete detail.updatedAt;
+                    delete detail.price;
+                    delete detail.id;
+                }
+            });
+
+            $.ajax({
+                url: `/api/carts/${cartId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(cartData),
+                success: function() {
+                    alert("Cart updated successfully.");
+                    window.location.href = `/cart/view/${cartId}`;
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(jqXHR.responseText);
+                    alert("Failed to update cart.");
+                }
+            });
+        });
+
+    });
+</script>
+
+</body>
+</html>

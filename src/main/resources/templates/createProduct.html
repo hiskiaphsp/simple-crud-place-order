@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Product</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">My Shop</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/products">Products</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/cart">Cart</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/order">Orders</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div id="message" class="mt-4"></div>
+    <h2 class="mb-4">Create New Product</h2>
+    <div class="d-flex justify-content-start">
+        <a class="btn btn-danger mb-2 mt-2" href="/products">Back</a>
+    </div>
+    <div class="d-flex">
+        <div class="card col-md-8">
+            <div class="card-header">Create New Product</div>
+            <div class="card-body">
+                <form id="create-product-form" method="post">
+                    <div class="mb-3">
+                        <label for="product-name" class="form-label">Product Name:</label>
+                        <input type="text" class="form-control" id="product-name" name="productName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="product-description" class="form-label">Description:</label>
+                        <textarea class="form-control" id="product-description" name="productDescription" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="product-type" class="form-label">Type:</label>
+                        <select class="form-select" id="product-type" name="productType" required>
+                            <option value="" disabled selected>Select product type</option>
+                            <option value="Book">Book</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Furniture">Furniture</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="product-price" class="form-label">Price:</label>
+                        <input type="number" class="form-control" id="product-price" name="productPrice" required step="0.01">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script>
+    $(document).ready(function() {
+        $('#create-product-form').on('submit', function(e) {
+            e.preventDefault();
+
+
+            const productData = {
+                name: $('#product-name').val(),
+                description: $('#product-description').val(),
+                type: $('#product-type').val(),
+                price: parseFloat($('#product-price').val())
+            };
+
+            $.ajax({
+                url: '/api/products',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(productData),
+                success: function(response) {
+                    $('#message').html('<div class="alert alert-success">Product created successfully!</div>');
+                    $('#create-product-form')[0].reset();
+                },
+                error: function() {
+                    $('#message').html('<div class="alert alert-danger">Failed to create product. Please try again.</div>');
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

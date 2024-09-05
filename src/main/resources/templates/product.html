@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Products</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">My Shop</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Products</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/cart">Cart</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/order">Orders</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="d-flex">
+        <div class="card col-md-4 mx-3">
+            <div class="card-header">
+                Customer Information
+            </div>
+            <div class="card-body">
+                <form id="customer-form">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name:</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address">Address:</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card col-md-7 mx-3">
+            <div class="card-header">
+                Products
+            </div>
+            <div class="d-flex justify-content-end">
+                <a class="btn btn-success mt-2 mx-2" href="/products/create">Add Product</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="product-list"></tbody>
+                </table>
+
+                <nav aria-label="Page navigation">
+                    <ul class="pagination" id="pagination-controls">
+                        <li class="page-item"><a class="page-link" href="#" id="first-page" onclick="fetchProducts(0)">First</a></li>
+                        <li class="page-item"><a class="page-link" href="#" id="prev-page">Previous</a></li>
+                        <li class="page-item"><a class="page-link" href="#" id="next-page">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="#" id="last-page" onclick="fetchProducts(totalPages - 1)">Last</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-primary mx-5 mt-4" onclick="submitCart()">Submit Cart</button>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    var cartDetails = [];
+    var currentPage = 0;
+    var totalPages = 1;
+
+    $(document).ready(function() {
+        fetchProducts(currentPage);
+    });
+
+    function fetchProducts(page) {
+        if (page < 0 || page >= totalPages) {
+            return;
+        }
+
+        const size = 5;
+        $.ajax({
+            url: `/api/products?page=${page}&size=${size}`,
+            method: 'GET',
+            success: function(response) {
+                let productList = response.data.items;
+                totalPages = response.data.totalPages || 1;
+                currentPage = response.data.page;
+
+                $('#product-list').empty();
+                productList.forEach(function(product) {
+                    $('#product-list').append(`
+                        <tr>
+                            <td>${product.name}</td>
+                            <td>${product.type}</td>
+                            <td>${product.price}</td>
+                            <td><input type="number" id="quantity-${product.id}" value="1" min="1" class="form-control"/></td>
+                            <td>
+                                <button class="btn btn-success" onclick="addToCart(${product.id})">Add to Cart</button>
+                                <a href="/products/edit/${product.id}" class="btn btn-warning">Edit</a>
+                                <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
+                            </td>
+                        </tr>`
+                    );
+                });
+
+                $('#prev-page').attr('onclick', `fetchProducts(${Math.max(0, currentPage - 1)})`);
+                $('#next-page').attr('onclick', `fetchProducts(${Math.min(totalPages - 1, currentPage + 1)})`);
+
+                if (currentPage === 0) {
+                    $('#first-page, #prev-page').parent().addClass('disabled');
+                } else {
+                    $('#first-page, #prev-page').parent().removeClass('disabled');
+                }
+
+                if (currentPage === totalPages - 1) {
+                    $('#next-page, #last-page').parent().addClass('disabled');
+                } else {
+                    $('#next-page, #last-page').parent().removeClass('disabled');
+                }
+            },
+            error: function() {
+                alert('Error fetching products.');
+            }
+        });
+    }
+
+    function addToCart(productId) {
+        let quantity = $(`#quantity-${productId}`).val();
+        cartDetails.push({
+            product: { id: productId },
+            quantity: parseInt(quantity)
+        });
+        alert('Product added to cart!');
+    }
+
+    function submitCart() {
+        let customer = {
+            name: $('#name').val(),
+            address: $('#address').val()
+        };
+
+        let cartData = {
+            customer: customer,
+            status: "",
+            cartDetails: cartDetails
+        };
+
+        $.ajax({
+            url: '/api/carts',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(cartData),
+            success: function(response) {
+                alert('Cart successfully created!');
+                cartDetails = [];
+            },
+            error: function() {
+                alert('Error creating cart.');
+            }
+        });
+    }
+
+    function deleteProduct(productId) {
+        if (confirm("Are you sure you want to delete this product?")) {
+            $.ajax({
+                url: `/api/products/${productId}`,
+                method: 'DELETE',
+                success: function() {
+                    alert('Product deleted successfully.');
+                    fetchProducts(currentPage);
+                },
+                error: function() {
+                    alert('Error deleting product.');
+                }
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

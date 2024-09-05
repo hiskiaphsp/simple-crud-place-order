@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Order Confirmation</title>
+</head>
+<body>
+
+<h1>Order Confirmation</h1>
+
+<p>Thank you for your purchase! Your order has been placed successfully.</p>
+
+<h3>Order Summary</h3>
+
+<table>
+    <thead>
+    <tr>
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>Price</th>
+    </tr>
+    </thead>
+    <tbody id="order-summary">
+    <!-- Order details will be injected here via AJAX -->
+    </tbody>
+</table>
+
+<p><strong>Total Price:</strong> <span id="total-price"></span></p>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Ambil detail pesanan dari server untuk ditampilkan di halaman konfirmasi
+        $.ajax({
+            url: '/api/carts/view',
+            method: 'GET',
+            success: function(response) {
+                let cartDetails = response.data.cartDetails;
+                let totalPrice = response.data.totalPrice;
+
+                cartDetails.forEach(function(detail) {
+                    $('#order-summary').append(
+                        `<tr>
+                            <td>${detail.product.name}</td>
+                            <td>${detail.quantity}</td>
+                            <td>${detail.price}</td>
+                        </tr>`
+                    );
+                });
+
+                $('#total-price').text(totalPrice);
+            },
+            error: function() {
+                alert("Failed to load order summary.");
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
